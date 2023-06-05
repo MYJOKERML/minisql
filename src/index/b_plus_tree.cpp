@@ -121,7 +121,7 @@ bool BPlusTree::InsertIntoLeaf(GenericKey *key, const RowId &value, Transaction 
     if (leaf->Lookup(key,tmp,processor_)) // 如果key已经存在
     {
         buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false);
-        return false;
+        return  false;
     }
     if (leaf->GetSize() < leaf->GetMaxSize()) // 如果叶子节点未满
     {
@@ -171,6 +171,7 @@ BPlusTreeLeafPage *BPlusTree::Split(LeafPage *node, Transaction *transaction) {
     if (page == nullptr) {
         throw ("Out of memory!");
     }
+
     auto new_node = reinterpret_cast<LeafPage *>(page->GetData());
     new_node->Init(page->GetPageId(), node->GetParentPageId(), sizeof(GenericKey *), leaf_max_size_);
     node->MoveHalfTo(new_node);
