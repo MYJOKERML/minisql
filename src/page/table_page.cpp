@@ -189,3 +189,7 @@ bool TablePage::GetNextTupleRid(const RowId &cur_rid, RowId *next_rid) {
   next_rid->Set(INVALID_PAGE_ID, 0);
   return false;
 }
+
+
+
+
