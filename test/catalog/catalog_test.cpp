@@ -98,15 +98,15 @@ TEST(CatalogTest, CatalogIndexTest) {
     ASSERT_EQ(DB_SUCCESS, index_info->GetIndex()->InsertEntry(row, rid, nullptr));
   }
   // Scan Key
-//   std::vector<RowId> ret;
-//   for (int i = 0; i < 10; i++) {
-//     std::vector<Field> fields{Field(TypeId::kTypeInt, i),
-//                               Field(TypeId::kTypeChar, const_cast<char *>("minisql"), 7, true)};
-//     Row row(fields);
-//     RowId rid(1000, i);
-//     ASSERT_EQ(DB_SUCCESS, index_info->GetIndex()->ScanKey(row, ret, &txn));
-//     ASSERT_EQ(rid.Get(), ret[i].Get());
-//   }
+   std::vector<RowId> ret;
+   for (int i = 0; i < 10; i++) {
+     std::vector<Field> fields{Field(TypeId::kTypeInt, i),
+                               Field(TypeId::kTypeChar, const_cast<char *>("minisql"), 7, true)};
+     Row row(fields);
+     RowId rid(1000, i);
+     ASSERT_EQ(DB_SUCCESS, index_info->GetIndex()->ScanKey(row, ret, &txn));
+     ASSERT_EQ(rid.Get(), ret[i].Get());
+   }
   delete db_01;
   /** Stage 2: Testing catalog loading */
   auto db_02 = new DBStorageEngine(db_file_name, false);
@@ -121,8 +121,8 @@ TEST(CatalogTest, CatalogIndexTest) {
                               Field(TypeId::kTypeChar, const_cast<char *>("minisql"), 7, true)};
     Row row(fields);
     RowId rid(1000, i);
-    // ASSERT_EQ(DB_SUCCESS, index_info_02->GetIndex()->ScanKey(row, ret_02, &txn));
-    // ASSERT_EQ(rid.Get(), ret_02[i].Get());
+     ASSERT_EQ(DB_SUCCESS, index_info_02->GetIndex()->ScanKey(row, ret_02, &txn));
+     ASSERT_EQ(rid.Get(), ret_02[i].Get());
   }
   delete db_02;
 }

@@ -81,23 +81,12 @@ void InternalPage::PairCopy(void *dest, void *src, int pair_num)
  */
 page_id_t InternalPage::Lookup(const GenericKey *key, const KeyManager &KM) 
 {
-    int l = 1, r = GetSize() - 1;
-    while (l <= r) 
-    {
-        int mid = (l + r) / 2;
-        if (KM.CompareKeys(KeyAt(mid), key) <= 0)
-            l = mid + 1;
-        else
-            r = mid - 1;
-    }
-
-    if(l >= GetSize())
-        return ValueAt(GetSize() - 1);
-
-    if(KM.CompareKeys(KeyAt(l), key) > 0)
-        return ValueAt(l-1);
-    else
-        return ValueAt(l);
+      for (int i = 1; i < GetSize(); ++i) {
+        // array_[i].first > key
+          if (KM.CompareKeys(KeyAt(i), key) > 0) {
+            return ValueAt(i-1);
+          }
+      }
 }
 
 /*****************************************************************************

@@ -18,7 +18,7 @@ IndexIterator::IndexIterator(page_id_t page_id, BufferPoolManager *bpm, int inde
     //begin
     if (type){
         item_index = 0; //从第一次结点中的第0号元素开始
-        Page = page;
+        page = Page;
         data = std::make_pair(page->KeyAt(item_index), page->ValueAt(item_index));
     }else{
         //end
