@@ -24,7 +24,7 @@ void InternalPage::Init(page_id_t page_id, page_id_t parent_id, int key_size, in
     SetParentPageId(parent_id);
     SetMaxSize(max_size);
     SetKeySize(key_size);
-    SetSize(1);
+    SetSize(0);
     SetPageType(IndexPageType::INTERNAL_PAGE);
 }
 /*
@@ -81,12 +81,14 @@ void InternalPage::PairCopy(void *dest, void *src, int pair_num)
  */
 page_id_t InternalPage::Lookup(const GenericKey *key, const KeyManager &KM) 
 {
-      for (int i = 1; i < GetSize(); ++i) {
-        // array_[i].first > key
-          if (KM.CompareKeys(KeyAt(i), key) > 0) {
-            return ValueAt(i-1);
-          }
-      }
+    for (int i = 1; i < GetSize(); ++i)
+    {
+        if (KM.CompareKeys(KeyAt(i), key) > 0)
+        {
+          return ValueAt(i-1);
+        }
+    }
+    return ValueAt(GetSize() - 1);
 }
 
 /*****************************************************************************
@@ -153,14 +155,14 @@ void InternalPage::CopyNFrom(void *src, int size, BufferPoolManager *buffer_pool
 {
     for(int i=0; i<size; i++)           // 遍历所有的数据
     {
-        SetKeyAt(i, reinterpret_cast<GenericKey *>(src + i * pair_size + key_off));     // 逐步将key拷贝到当前节点中
-        SetValueAt(i, *reinterpret_cast<page_id_t *>(src + i * pair_size + val_off));   // 逐步将value拷贝到当前节点中
-        auto page = buffer_pool_manager->FetchPage(ValueAt(i));                         // 获取value对应的数据页
+        SetKeyAt(GetSize() + i, reinterpret_cast<GenericKey *>(src + i * pair_size + key_off));     // 逐步将key拷贝到当前节点中
+        SetValueAt(GetSize() + i, *reinterpret_cast<page_id_t *>(src + i * pair_size + val_off));   // 逐步将value拷贝到当前节点中
+        auto page = buffer_pool_manager->FetchPage(ValueAt(GetSize() + i));                         // 获取value对应的数据页
         auto node = reinterpret_cast<BPlusTreePage *>(page->GetData());
         node->SetParentPageId(GetPageId());                                             // 设置子节点对应的数据页的父节点为当前节点
         buffer_pool_manager->UnpinPage(ValueAt(i), true);
     }
-    SetSize(size);                                                // 设置当前节点的大小
+    IncreaseSize(size);                                                // 设置当前节点的大小
 }
 
 /*****************************************************************************
@@ -206,13 +208,7 @@ void InternalPage::MoveAllTo(InternalPage *recipient, GenericKey *middle_key, Bu
 {
     SetKeyAt(0, middle_key);                // 设置中间的key
     recipient->CopyNFrom(pairs_off, GetSize(), buffer_pool_manager);     // 将当前节点的数据拷贝到recipient中
-    for(int i=0; i<GetSize(); i++)
-    {
-        auto page = buffer_pool_manager->FetchPage(ValueAt(i));         // 获取value对应的数据页
-        auto node = reinterpret_cast<BPlusTreePage *>(page->GetData());
-        node->SetParentPageId(recipient->GetPageId());                  // 设置子节点对应的数据页的父节点为recipient
-        buffer_pool_manager->UnpinPage(ValueAt(i), true);
-    }
+    SetSize(0);
 }
 
 /*****************************************************************************

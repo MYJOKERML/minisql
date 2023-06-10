@@ -11,6 +11,10 @@ class TableMetadata {
   friend class TableInfo;
 
  public:
+
+  std::vector<std::string> primary_key_name;
+  std::vector<std::string> unique_key_name;
+
   ~TableMetadata() { delete schema_; }
 
   uint32_t SerializeTo(char *buf) const;

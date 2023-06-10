@@ -42,7 +42,7 @@ page_id_t LeafPage::GetNextPageId() const
 void LeafPage::SetNextPageId(page_id_t next_page_id) 
 {
   next_page_id_ = next_page_id;
-  if (next_page_id == 0) {
+  if (next_page_id < 0) {
     LOG(INFO) << "Fatal error";
   }
 }
@@ -124,7 +124,6 @@ int LeafPage::Insert(GenericKey *key, const RowId &value, const KeyManager &KM) 
         SetKeyAt(index, key);
         SetValueAt(index, value);
         IncreaseSize(1);
-
     }
     return GetSize();
 }

@@ -177,6 +177,7 @@ bool BufferPoolManager::CheckAllUnpinned() {
     if (pages_[i].pin_count_ != 0) {
       res = false;
       LOG(ERROR) << "page " << pages_[i].page_id_ << " pin count:" << pages_[i].pin_count_ << endl;
+
     }
   }
   return res;

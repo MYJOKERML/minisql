@@ -8,7 +8,7 @@
 
 TEST(BufferPoolManagerTest, BinaryDataTest) {
   const std::string db_name = "bpm_test.db";
-  const size_t buffer_pool_size = 10;
+  const size_t buffer_pool_size = 2000;
 
   std::random_device r;
   std::default_random_engine rng(r());
@@ -51,11 +51,11 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
   }
 
   // Scenario: After unpinning pages {0, 1, 2, 3, 4} we should be able to create 5 new pages
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 2000; ++i) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
     EXPECT_TRUE(bpm->FlushPage(i));
   }
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 2000; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(page_id_temp));
     EXPECT_EQ(buffer_pool_size + i, page_id_temp);
     bpm->UnpinPage(page_id_temp, false);

@@ -27,7 +27,7 @@ class BPlusTree {
 
  public:
   explicit BPlusTree(index_id_t index_id, BufferPoolManager *buffer_pool_manager, const KeyManager &comparator,
-                     int leaf_max_size = LEAF_PAGE_SIZE, int internal_max_size = INTERNAL_PAGE_SIZE);
+                     int leaf_max_size = UNDEFINED_SIZE, int internal_max_size = UNDEFINED_SIZE);
 
   // Returns true if this B+ tree has no keys and values.
   bool IsEmpty() const;
@@ -109,6 +109,9 @@ class BPlusTree {
   KeyManager processor_;
   int leaf_max_size_;
   int internal_max_size_;
+
+  std::vector<page_id_t> delete_pages;
+  void ClrDeletePages();
 };
 
 #endif  // MINISQL_B_PLUS_TREE_H
