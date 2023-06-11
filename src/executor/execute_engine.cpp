@@ -14,8 +14,17 @@
 #include "executor/executors/update_executor.h"
 #include "executor/executors/values_executor.h"
 #include "glog/logging.h"
+#include "parser/syntax_tree_printer.h"
 #include "planner/planner.h"
+#include "utils/tree_file_mgr.h"
 #include "utils/utils.h"
+
+extern "C" {
+int yyparse(void);
+FILE *yyin;
+#include "parser/minisql_lex.h"
+#include "parser/parser.h"
+}
 
 ExecuteEngine::ExecuteEngine() {
   char path[] = "./databases";
@@ -494,10 +503,9 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     for (string column_name_stp : column_names)
     {
         if (if_primary_key[column_name_stp])
-        { // 这里应该要在主键向量和unique键向量中间pushback一下；
-/*<------------------------------此处待修改------------------------------------------------>*/
-//          tmp_table_info->table_meta_->primary_key_name = pri_keys;
-//          tmp_table_info->table_meta_->unique_key_name = uni_keys;
+        {
+          tmp_table_info->GetTableMeta()->primary_key_name = pri_keys;
+          tmp_table_info->GetTableMeta()->unique_key_name = uni_keys;
           string stp_index_name = column_name_stp + "_index";
           vector<string> index_columns_stp = {column_name_stp};
           IndexInfo *stp_index_info;
@@ -562,21 +570,103 @@ dberr_t ExecuteEngine::ExecuteShowIndexes(pSyntaxNode ast, ExecuteContext *conte
 /**
  * TODO: Student Implement
  */
-dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *context) {
+dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *context)
+{
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteCreateIndex" << std::endl;
 #endif
-  return DB_FAILED;
+    if(ast == nullptr || current_db_.empty())
+            return DB_FAILED;
+
+    CatalogManager* current_CMgr = dbs_[current_db_]->catalog_mgr_;   // 获取当前数据库的catalog manager
+    string table_name(ast->child_->next_->val_);                  // 获取表名
+    string index_name(ast->child_->val_);                    // 获取索引名
+    TableInfo* target_table;                            // 用于存储表的信息
+    dberr_t if_gettable_success = current_CMgr->GetTable(table_name, target_table);   // 获取表的信息
+    if(if_gettable_success != DB_SUCCESS)
+            return if_gettable_success;
+    vector<string> vec_index_colum_lists;   // 用于存储索引的列名
+    pSyntaxNode pSnode_colum_list = ast->child_->next_->next_->child_;
+    while(pSnode_colum_list)
+    {
+        vec_index_colum_lists.push_back(string(pSnode_colum_list->val_));   // 获取索引的列名
+        pSnode_colum_list = pSnode_colum_list->next_;
+    }
+    Schema* target_schema = target_table->GetSchema();
+    for(string tmp_colum_name: vec_index_colum_lists)
+    {
+        int if_could = 0;
+        vector<string> uni_colum_list = target_table->GetTableMeta()->unique_key_name;
+        for(string name: uni_colum_list)
+        {
+            if(name == tmp_colum_name)    // 如果索引的列名在unique列中，那么可以创建索引
+            {
+                if_could = 1;
+                break;
+            }
+        }
+        if(!if_could)
+        {
+            std::cout << "can not build index on column(s) not unique" << endl;
+            return DB_FAILED;
+        }
+        uint32_t tmp_index;
+        dberr_t if_getcolum_success = target_schema->GetColumnIndex(tmp_colum_name, tmp_index);
+        if(if_getcolum_success != DB_SUCCESS)
+          return if_getcolum_success;
+    }
+    IndexInfo* new_indexinfo;
+    dberr_t if_createindex_success = current_CMgr->CreateIndex(table_name, index_name, vec_index_colum_lists, nullptr, new_indexinfo, "");
+    if(if_createindex_success != DB_SUCCESS)
+            return if_createindex_success;
+    return DB_SUCCESS;
 }
 
 /**
  * TODO: Student Implement
  */
-dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context) {
+dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context)
+{
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteDropIndex" << std::endl;
 #endif
-  return DB_FAILED;
+    if(current_db_.empty())
+      return DB_FAILED;
+
+    CatalogManager* current_CMgr = dbs_[current_db_]->catalog_mgr_;
+    string index_name(ast->child_->val_);
+    vector<TableInfo*> table_names;
+    current_CMgr->GetTables(table_names);
+    string table_name;
+    for(TableInfo* tmp_info: table_names)   // 遍历所有表，找到索引所在的表
+    {
+        vector<IndexInfo*> index_infos;
+        current_CMgr->GetTableIndexes(tmp_info->GetTableName(), index_infos);
+        for(IndexInfo* stp_idx_info: index_infos)
+        {
+            if(stp_idx_info->GetIndexName() == index_name)
+            {
+                  table_name = tmp_info->GetTableName();
+                  goto out;
+            }
+        }
+    }
+  out:;
+    IndexInfo* tmp_indexinfo;
+    dberr_t if_getindex_success = current_CMgr->GetIndex(table_name, index_name, tmp_indexinfo);
+    if(if_getindex_success != DB_SUCCESS)
+    {
+        std::cout << "no index: " << index_name << endl;
+        return if_getindex_success;
+    }
+    dberr_t if_create_success = current_CMgr->DropIndex(table_name, index_name);
+    if(if_create_success != DB_SUCCESS)
+    {
+        std::cout << "fail to drop index: " << index_name << endl;
+        return if_create_success;
+    }
+
+    return DB_SUCCESS;
 }
 
 
@@ -604,11 +694,71 @@ dberr_t ExecuteEngine::ExecuteTrxRollback(pSyntaxNode ast, ExecuteContext *conte
 /**
  * TODO: Student Implement
  */
-dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context) {
+dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
+{
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteExecfile" << std::endl;
 #endif
-  return DB_FAILED;
+
+    string filename(ast->child_->val_);       // 获取文件名
+    fstream exefstream(filename);             // 打开文件
+    if(!exefstream.is_open())                 // 打开失败
+    {
+        std::cout << "fail to open '" << filename << "'" << endl;
+        return DB_FAILED;
+    }
+    int buffer_size = 1024;
+    char* cmd = new char[buffer_size];
+
+    while (true)
+    {
+        char tmp_char;
+        int tmp_counter = 0;
+        do
+        {
+            if(exefstream.eof())    // 文件结束
+            {
+                  delete []cmd;
+                  return DB_SUCCESS;
+            }
+            exefstream.get(tmp_char);   // 读取一个字符
+            cmd[tmp_counter++] = tmp_char;    // 存入buffer
+            if(tmp_counter >= buffer_size)    // buffer溢出
+            {
+                  std::cout << "buffer overflow" << endl;
+                  return DB_FAILED;
+            }
+        }while(tmp_char != ';');
+        cmd[tmp_counter] = 0;   // 末尾加上'\0'
+
+        YY_BUFFER_STATE bp = yy_scan_string(cmd);
+        if (bp == nullptr)
+        {
+            LOG(ERROR) << "Failed to create yy buffer state." << std::endl;
+            exit(1);
+        }
+        yy_switch_to_buffer(bp);
+
+        // init parser module
+        MinisqlParserInit();
+
+        // parse
+        yyparse();
+
+        // parse result handle
+        if (MinisqlParserGetError())
+        {
+            // error
+            printf("%s\n", MinisqlParserGetErrorMessage());
+        }
+
+        this->Execute(MinisqlGetParserRootNode());
+
+        // clean memory after parse
+        MinisqlParserFinish();
+        yy_delete_buffer(bp);
+        yylex_destroy();
+  }
 }
 
 /**
@@ -619,4 +769,8 @@ dberr_t ExecuteEngine::ExecuteQuit(pSyntaxNode ast, ExecuteContext *context)
   #ifdef ENABLE_EXECUTE_DEBUG
     LOG(INFO) << "ExecuteQuit" << std::endl;
   #endif
+    ASSERT(ast->type_ == kNodeQuit, "Unexpected node type.");
+    cout << "Bye" << endl;
+    return DB_SUCCESS;
 }
+
