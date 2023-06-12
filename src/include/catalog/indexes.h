@@ -60,11 +60,11 @@ class IndexInfo {
     delete key_schema_;
   }
 
-/**
+  /**
  * TODO: Student Implement
- */
+   */
   void Init(IndexMetadata *meta_data, TableInfo *table_info, BufferPoolManager *buffer_pool_manager)
-{
+  {
     // Step1: init index metadata and table info
     meta_data_ = meta_data;
     table_info_ = table_info;
@@ -72,12 +72,12 @@ class IndexInfo {
     vector<uint32_t> column_index;
     for (auto &key_index : meta_data->GetKeyMapping()) 
     {
-        column_index.push_back(key_index);      //将要作为索引的key push到column_index中
+      column_index.push_back(key_index);      //将要作为索引的key push到column_index中
     }
     key_schema_ = Schema::ShallowCopySchema(table_info_->GetSchema(), column_index);
     // Step3: call CreateIndex to create the index
     index_ = CreateIndex(buffer_pool_manager, "bptree");
-}
+  }
 
   inline Index *GetIndex() { return index_; }
 
@@ -85,6 +85,7 @@ class IndexInfo {
 
   IndexSchema *GetIndexKeySchema() { return key_schema_; }
 
+  TableInfo * GetTableInfo(){return table_info_;}
  private:
   explicit IndexInfo() : meta_data_{nullptr}, index_{nullptr}, key_schema_{nullptr} {}
 

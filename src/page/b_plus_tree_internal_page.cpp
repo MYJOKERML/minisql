@@ -160,7 +160,7 @@ void InternalPage::CopyNFrom(void *src, int size, BufferPoolManager *buffer_pool
         auto page = buffer_pool_manager->FetchPage(ValueAt(GetSize() + i));                         // 获取value对应的数据页
         auto node = reinterpret_cast<BPlusTreePage *>(page->GetData());
         node->SetParentPageId(GetPageId());                                             // 设置子节点对应的数据页的父节点为当前节点
-        buffer_pool_manager->UnpinPage(ValueAt(i), true);
+        buffer_pool_manager->UnpinPage(ValueAt(GetSize() + i), true);
     }
     IncreaseSize(size);                                                // 设置当前节点的大小
 }
@@ -260,7 +260,7 @@ void InternalPage::MoveLastToFrontOf(InternalPage *recipient, GenericKey *middle
                                      BufferPoolManager *buffer_pool_manager) 
 {
     recipient->SetKeyAt(0, middle_key);
-    recipient->CopyFirstFrom(ValueAt(GetSize() - 1), buffer_pool_manager);
+    recipient->CopyFirstFrom(KeyAt(GetSize() - 1), ValueAt(GetSize() - 1), buffer_pool_manager);
     buffer_pool_manager->UnpinPage(ValueAt(GetSize() - 1), true);
     IncreaseSize(-1);
 }
@@ -269,13 +269,14 @@ void InternalPage::MoveLastToFrontOf(InternalPage *recipient, GenericKey *middle
  * Since it is an internal page, the moved entry(page)'s parent needs to be updated.
  * So I need to 'adopt' it by changing its parent page id, which needs to be persisted with BufferPoolManger
  */
-void InternalPage::CopyFirstFrom(const page_id_t value, BufferPoolManager *buffer_pool_manager) 
+void InternalPage::CopyFirstFrom(GenericKey* key, const page_id_t value, BufferPoolManager *buffer_pool_manager)
 {
     for (int i = GetSize(); i > 0; --i) 
     {
         SetValueAt(i, ValueAt(i - 1));
         SetKeyAt(i, KeyAt(i - 1));
     }
+    SetKeyAt(0, key);
     SetValueAt(0, value);
     IncreaseSize(1);
     auto page = buffer_pool_manager->FetchPage(value);
