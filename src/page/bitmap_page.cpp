@@ -21,7 +21,7 @@ bool BitmapPage<PageSize>::AllocatePage(uint32_t &page_offset)  // 分配内存�
         return true;
     }
     return false;  // 如果没有空间，就返回false
-    }
+}
 
 /**
  * TODO: Student Implement

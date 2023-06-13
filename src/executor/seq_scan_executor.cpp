@@ -23,10 +23,12 @@ bool SeqScanExecutor::Next(Row *row, RowId *rid)
     auto Predicate_ = plan_->GetPredicate();    //获取谓词
     while(table_iterator != table_info->GetTableHeap()->End())   //遍历表
     {
+      //LOG(WARNING) << "SeqScanExecutor::Next"<<std::endl;
         if(Predicate_ == nullptr)   //如果谓词为空，那么直接返回
         {
           *row = *table_iterator;
           *rid = table_iterator->GetRowId();
+          table_iterator++;
           return true;
         }
         if(Predicate_->GetType() == ExpressionType::LogicExpression)   //如果谓词为逻辑表达式，那么判断是否满足谓词
@@ -46,20 +48,23 @@ bool SeqScanExecutor::Next(Row *row, RowId *rid)
             {
               *row = *table_iterator;
               *rid = table_iterator->GetRowId();
+              table_iterator++;
               return true;
             }
         }
         else    //如果谓词为其他表达式，那么判断是否满足谓词
         {
             Field f = Predicate_->Evaluate(table_iterator.operator->());
-            if(f.CompareEquals(Field(kTypeInt, 1)))   //如果谓词不为空，那么判断是否满足谓词
+            if(f.CompareEquals(Field(kTypeInt, 1)) == kTrue)   //如果谓词不为空，那么判断是否满足谓词
             {
               *row = *table_iterator;
               *rid = table_iterator->GetRowId();
+              table_iterator++;
               return true;
             }
         }
         table_iterator++;   //遍历下一行
     }
+    //LOG(WARNING) << "SeqScanExecutor::Next"<<std::endl;
     return false;   //遍历结束
 }

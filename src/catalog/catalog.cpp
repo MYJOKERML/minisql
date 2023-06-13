@@ -100,6 +100,14 @@ CatalogManager::CatalogManager(BufferPoolManager *buffer_pool_manager, LockManag
 
 CatalogManager::~CatalogManager() {
     FlushCatalogMetaPage();
+    delete catalog_meta_;
+    for (auto iter : tables_) {
+        delete iter.second;
+    }
+    for (auto iter : indexes_) {
+        delete iter.second;
+    }
+
 }
 
 /**
@@ -112,8 +120,10 @@ dberr_t CatalogManager::CreateTable(const string &table_name, TableSchema *schem
         return DB_TABLE_ALREADY_EXIST;
     table_info = TableInfo::Create();       // 新建一个TableInfo
     table_id_t table_id = next_table_id_++; // 分配一个table_id
-    TableHeap *table_heap = TableHeap::Create(buffer_pool_manager_, schema, nullptr, log_manager_, lock_manager_);  // 新建一个table_heap
-    TableMetadata *meta_data = TableMetadata::Create(table_id, table_name, table_heap->GetFirstPageId(), schema);   // 新建一个table_meta_data
+    Schema* new_schema = nullptr;
+    new_schema = Schema::DeepCopySchema(schema);
+    TableHeap *table_heap = TableHeap::Create(buffer_pool_manager_, new_schema, nullptr, log_manager_, lock_manager_);  // 新建一个table_heap
+    TableMetadata *meta_data = TableMetadata::Create(table_id, table_name, table_heap->GetFirstPageId(), new_schema);   // 新建一个table_meta_data
     table_info->Init(meta_data, table_heap);    // 初始化table_info
     table_names_[table_name] = table_id;        //将catalog manager中的存放table_id和table_info的map初始化
     tables_[table_id] = table_info;
@@ -125,6 +135,7 @@ dberr_t CatalogManager::CreateTable(const string &table_name, TableSchema *schem
     FlushCatalogMetaPage();
     return DB_SUCCESS;
 }
+
 
 /**
  * TODO: Student Implement
@@ -396,10 +407,10 @@ dberr_t CatalogManager::LoadIndex(const index_id_t index_id, const page_id_t pag
 /**
  * TODO: Student Implement
  */
-dberr_t CatalogManager::GetTable(const table_id_t table_id, TableInfo *&table_info) 
+dberr_t CatalogManager::GetTable(const table_id_t table_id, TableInfo *&table_info)
 {
     auto table_it = tables_.find(table_id);
-    if (table_it == tables_.end()) 
+    if (table_it == tables_.end())
         return DB_TABLE_NOT_EXIST;
     table_info = table_it->second;
     return DB_SUCCESS;
