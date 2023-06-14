@@ -13,7 +13,7 @@ dberr_t BPlusTreeIndex::InsertEntry(const Row &key, RowId row_id, Transaction *t
   ASSERT(row_id.Get() != INVALID_ROWID.Get(), "Invalid row id for index insert.");
   GenericKey *index_key = processor_.InitKey();
   processor_.SerializeFromKey(index_key, key, key_schema_);
-
+  LOG(WARNING)<<row_id.GetPageId() <<" " <<row_id.GetSlotNum()<<std::endl;
   bool status = container_.Insert(index_key, row_id, txn);
   delete index_key;
   //  TreeFileManagers mgr("tree_");
@@ -32,6 +32,7 @@ dberr_t BPlusTreeIndex::RemoveEntry(const Row &key, RowId row_id, Transaction *t
   processor_.SerializeFromKey(index_key, key, key_schema_);
 
   container_.Remove(index_key, txn);
+
   delete index_key;
   return DB_SUCCESS;
 }

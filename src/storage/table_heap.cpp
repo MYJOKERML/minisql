@@ -69,22 +69,11 @@ bool TableHeap::UpdateTuple(const Row &row, const RowId &rid, Transaction *txn)
     if (!GetTuple(&old, txn)) {                                                                                     //如果获取不到old row，返回false
         return false;
     }
-    page->WLatch();                                                                                                 //获取到old row后，对该页加写锁，防止在写的过程中发生冲突
-    int type = page->UpdateTuple(row, &old, schema_, txn, lock_manager_, log_manager_);                             //调用该页的UpdateTuple函数，更新该页中的tuple
-    page->WUnlatch();                                                                                               //更新完后，对该页解锁
-    // if type==0, success, return true
-    // if type==1 or type==2, fail, return false
-    // if type==3, space is not enough, we need delete and insert
-    if (type == 0) 
-    {                                                                                                               //如果type为0，说明更新成功，返回true
-        buffer_pool_manager_->UnpinPage(page->GetTablePageId(), true);                                              //写入后该页不再被调用，使用UnpinPage函数，将pin_count减一，由于这里写入了数据，所有该页变成了脏页，所以第二个参数is_dirty为true
-        return true;
-    } 
-    else 
-    {
-        buffer_pool_manager_->UnpinPage(page->GetTablePageId(), false);                                             //如果更新失败，使用UnpinPage函数，将pin_count减一，由于这里没有写入数据，所以第二个参数is_dirty为false
-        return false;
-    }
+
+    page->UpdateTuple(row, &old, schema_, txn, lock_manager_, log_manager_);                             //调用该页的UpdateTuple函数，更新该页中的tuple
+
+    buffer_pool_manager_->UnpinPage(page->GetTablePageId(), true);                                              //写入后该页不再被调用，使用UnpinPage函数，将pin_count减一，由于这里写入了数据，所有该页变成了脏页，所以第二个参数is_dirty为true
+    return true;
 }
 
 /**

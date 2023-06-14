@@ -36,7 +36,7 @@ bool DeleteExecutor::Next([[maybe_unused]] Row *row, RowId *rid)
     if (deleted) {
       for(auto Index_in_Table:table_indexes_){
         to_delete_tuple.GetKeyFromRow(table_info_->GetSchema(), Index_in_Table->GetIndexKeySchema(),keys);
-        Index_in_Table->GetIndex()->RemoveEntry(keys, *rid, exec_ctx_->GetTransaction());
+        Index_in_Table->GetIndex()->RemoveEntry(keys, to_delete_tuple.GetRowId(), exec_ctx_->GetTransaction());
       }
     }
   }

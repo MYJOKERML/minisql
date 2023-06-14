@@ -18,6 +18,7 @@
 #include "planner/planner.h"
 #include "utils/tree_file_mgr.h"
 #include "utils/utils.h"
+#include <fstream>
 
 extern "C" {
 int yyparse(void);
@@ -503,7 +504,7 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     CatalogManager *current_CMgr = dbs_[current_db_]->catalog_mgr_;
     for (string column_name_stp : column_names)
     {
-        if (if_primary_key[column_name_stp])
+        if (if_primary_key[column_name_stp]||if_unique[column_name_stp])
         {
           tmp_table_info->GetTableMeta()->primary_key_name = pri_keys;
           tmp_table_info->GetTableMeta()->unique_key_name = uni_keys;
@@ -528,6 +529,7 @@ dberr_t ExecuteEngine::ExecuteDropTable(pSyntaxNode ast, ExecuteContext *context
   #ifdef ENABLE_EXECUTE_DEBUG
     LOG(INFO) << "ExecuteDropTable" << std::endl;
   #endif
+
     if(ast->child_ == nullptr)
     {
         ExecuteInformation(DB_NOT_EXIST);
@@ -535,7 +537,11 @@ dberr_t ExecuteEngine::ExecuteDropTable(pSyntaxNode ast, ExecuteContext *context
     }
     string drop_table_name(ast->child_->val_);
 
-    return dbs_[current_db_]->catalog_mgr_->DropTable(drop_table_name);
+    dberr_t res = dbs_[current_db_]->catalog_mgr_->DropTable(drop_table_name);
+
+    ExecuteInformation(res);
+
+    return res;
 }
 
 /**
@@ -703,6 +709,7 @@ dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
 
     string filename(ast->child_->val_);       // 获取文件名
     fstream exefstream(filename);             // 打开文件
+    exefstream.open(filename, ios::out | ios::in);
     if(!exefstream.is_open())                 // 打开失败
     {
         std::cout << "fail to open '" << filename << "'" << endl;

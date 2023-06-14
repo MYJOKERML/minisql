@@ -268,10 +268,9 @@ dberr_t CatalogManager::DropTable(const string &table_name)
         return DB_TABLE_NOT_EXIST;
     table_id_t table_id = table_id_it->second;      //找到对应的table_id
 
-    if (!buffer_pool_manager_->DeletePage(tables_[table_id]->GetRootPageId())) 
-        return DB_FAILED;
-    if (!buffer_pool_manager_->DeletePage(catalog_meta_->table_meta_pages_[table_id])) 
-        return DB_FAILED;
+
+    buffer_pool_manager_->DeletePage(catalog_meta_->table_meta_pages_[table_id]);
+
 
     tables_.erase(tables_.find(table_id));      //删除各map中储存的data信息
     table_names_.erase(table_names_.find(table_name));

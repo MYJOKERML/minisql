@@ -23,23 +23,33 @@ bool InsertExecutor::Next([[maybe_unused]] Row *row, RowId *rid) {
   }
   Row to_insert_tuple{};
   RowId emit_rid;
-  int32_t insert_count = 0;
 
   while (child_executor_->Next(&to_insert_tuple, &emit_rid)) //child executor 为 value executor
   {
-    bool inserted = table_info_->GetTableHeap()->InsertTuple(to_insert_tuple, exec_ctx_->GetTransaction());
     Row keys{};
+    vector<RowId> result;
+    bool inserted = true;
+    for(auto Index_in_Table:table_indexes_)
+    {
+        to_insert_tuple.GetKeyFromRow(table_info_->GetSchema(), Index_in_Table->GetIndexKeySchema(), keys);
+        Index_in_Table->GetIndex()->ScanKey(keys, result, exec_ctx_->GetTransaction());
+        if(!result.empty())
+        {
+          inserted = false;
+          break;
+        }
+    }
+    if(!inserted)
+        break;
+    inserted = table_info_->GetTableHeap()->InsertTuple(to_insert_tuple, exec_ctx_->GetTransaction());
     if (inserted) {
       for(auto Index_in_Table:table_indexes_){
         to_insert_tuple.GetKeyFromRow(table_info_->GetSchema(), Index_in_Table->GetIndexKeySchema(),keys);
-        Index_in_Table->GetIndex()->InsertEntry(keys,*rid, exec_ctx_->GetTransaction());
+        Index_in_Table->GetIndex()->InsertEntry(keys, to_insert_tuple.GetRowId() ,exec_ctx_->GetTransaction());
       }
-      insert_count++;
     }
   }
-  std::vector<Field> Fields{};
-  Fields.push_back(Field(kTypeInt,insert_count));
-  *row = Row{Fields};
+  *row = Row{};
   is_end = true;
   return true;
 }
