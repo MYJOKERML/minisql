@@ -709,7 +709,6 @@ dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
 
     string filename(ast->child_->val_);       // 获取文件名
     fstream exefstream(filename);             // 打开文件
-    exefstream.open(filename, ios::out | ios::in);
     if(!exefstream.is_open())                 // 打开失败
     {
         std::cout << "fail to open '" << filename << "'" << endl;

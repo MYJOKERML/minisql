@@ -83,11 +83,9 @@ bool BPlusTree::Insert(GenericKey *key, const RowId &value, Transaction *transac
 {
     if (IsEmpty())
     {
-        LOG(WARNING) << "Enter5" << endl;
         StartNewTree(key, value);  // 如果树为空，新建树
         return true;
     }
-    LOG(WARNING) << "Enter6" << endl;
     return InsertIntoLeaf(key, value, transaction);   // 否则插入叶子节点
 }
 /*
