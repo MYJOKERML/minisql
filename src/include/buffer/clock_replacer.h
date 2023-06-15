@@ -38,10 +38,13 @@ class CLOCKReplacer : public Replacer {
 
   size_t Size() override;
 
+  enum class State { EMPTY, ACCESSED, UNUSED };
+
  private:
+  static bool IsEmpty(CLOCKReplacer::State &);
   size_t capacity;
-  list<frame_id_t> clock_list;               // replacer中可以被替换的数据页
-  map<frame_id_t, frame_id_t> clock_status;  // 数据页的存储状态
+  std::vector<State> SecondChance;
+  frame_id_t pointer{0};         // pointer to the current frame
 };
 
 #endif  // MINISQL_CLOCK_REPLACER_H
