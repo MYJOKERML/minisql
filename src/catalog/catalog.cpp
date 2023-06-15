@@ -84,13 +84,13 @@ CatalogManager::CatalogManager(BufferPoolManager *buffer_pool_manager, LockManag
         next_table_id_ = catalog_meta_->GetNextTableId();
         next_index_id_ = catalog_meta_->GetNextIndexId();
 
-        for (auto table_meta_page_it : catalog_meta_->table_meta_pages_) 
+        for (auto table_meta_pages : catalog_meta_->table_meta_pages_)
         {
-            LoadTable(table_meta_page_it.first, table_meta_page_it.second);
+            LoadTable(table_meta_pages.first, table_meta_pages.second);
         }
-        for (auto index_meta_page_it : catalog_meta_->index_meta_pages_) 
+        for (auto index_meta_pages : catalog_meta_->index_meta_pages_)
         {
-            LoadIndex(index_meta_page_it.first, index_meta_page_it.second);
+            LoadIndex(index_meta_pages.first, index_meta_pages.second);
         }
 
         buffer_pool_manager_->UnpinPage(CATALOG_META_PAGE_ID, false);
@@ -142,10 +142,10 @@ dberr_t CatalogManager::CreateTable(const string &table_name, TableSchema *schem
  */
 dberr_t CatalogManager::GetTable(const string &table_name, TableInfo *&table_info)
 {
-    auto table_id_it = table_names_.find(table_name);
-    if (table_id_it == table_names_.end()) return DB_TABLE_NOT_EXIST;   //如果没找到
+    auto table_id_iter = table_names_.find(table_name);
+    if (table_id_iter == table_names_.end()) return DB_TABLE_NOT_EXIST;   //如果没找到
 
-    return GetTable(table_id_it->second, table_info);       // 使用table_id继续查找
+    return GetTable(table_id_iter->second, table_info);       // 使用table_id继续查找
 }
 
 /**
@@ -219,13 +219,13 @@ dberr_t CatalogManager::GetIndex(const std::string &table_name, const std::strin
 {
     if(!table_names_.count(table_name))      //查找是否存在这个table
         return DB_TABLE_NOT_EXIST;
-    auto table_index_it = index_names_.find(table_name);    //查找这个table是否有和index的对应关系
-    if (table_index_it == index_names_.end())
+    auto table_index_iter = index_names_.find(table_name);    //查找这个table是否有和index的对应关系
+    if (table_index_iter == index_names_.end())
         return DB_INDEX_NOT_FOUND;
     else 
     {
-        auto index_id_it = table_index_it->second.find(index_name);
-        if (index_id_it == table_index_it->second.end()) 
+        auto index_id_it = table_index_iter->second.find(index_name);
+        if (index_id_it == table_index_iter->second.end())
             return DB_INDEX_NOT_FOUND;
         auto index_info_it = indexes_.find(index_id_it->second);    //从indexes_中拿到对应的信息并赋值
         if (index_info_it == indexes_.end()) 
@@ -248,10 +248,10 @@ dberr_t CatalogManager::GetTableIndexes(const std::string &table_name, std::vect
     {
         for (const auto &index_map : index_names_.find(table_name)->second) 
         {
-            auto indexes_it = indexes_.find(index_map.second);
-            if (indexes_it == indexes_.end()) 
+            auto indexes_iter = indexes_.find(index_map.second);
+            if (indexes_iter == indexes_.end())
                 return DB_FAILED;
-            indexes.push_back(indexes_it->second);
+            indexes.push_back(indexes_iter->second);
         }
     }
 
@@ -263,10 +263,10 @@ dberr_t CatalogManager::GetTableIndexes(const std::string &table_name, std::vect
  */
 dberr_t CatalogManager::DropTable(const string &table_name) 
 {
-    auto table_id_it = table_names_.find(table_name);
-    if (table_id_it == table_names_.end())  //如果table不存在
+    auto table_id_iter = table_names_.find(table_name);
+    if (table_id_iter == table_names_.end())  //如果table不存在
         return DB_TABLE_NOT_EXIST;
-    table_id_t table_id = table_id_it->second;      //找到对应的table_id
+    table_id_t table_id = table_id_iter->second;      //找到对应的table_id
 
 
     buffer_pool_manager_->DeletePage(catalog_meta_->table_meta_pages_[table_id]);
@@ -296,30 +296,30 @@ dberr_t CatalogManager::DropIndex(const string &table_name, const string &index_
 {
     if (!table_names_.count(table_name))
         return DB_TABLE_NOT_EXIST;
-    auto table_index_it = index_names_.find(table_name);
-    if (table_index_it == index_names_.end())   //如果该table没有和index的对应关系
+    auto table_index_iter = index_names_.find(table_name);
+    if (table_index_iter == index_names_.end())   //如果该table没有和index的对应关系
     {
         return DB_INDEX_NOT_FOUND;
     } 
     else
     {
-        auto index_name_it = table_index_it->second.find(index_name);
-        if (index_name_it == table_index_it->second.end())
+        auto index_name_iter = table_index_iter->second.find(index_name);
+        if (index_name_iter == table_index_iter->second.end())
             return DB_INDEX_NOT_FOUND;
         else 
         {
-            index_id_t index_id = index_name_it->second;
+            index_id_t index_id = index_name_iter->second;
             IndexInfo *index_info = indexes_[index_id];
             index_info->GetIndex()->Destroy();                      // 删除索引
             if (!buffer_pool_manager_->DeletePage(catalog_meta_->index_meta_pages_[index_id])) 
                 return DB_FAILED;                // 删除存放metadata的页
-            if (table_index_it->second.size() == 1) 
+            if (table_index_iter->second.size() == 1)
             {
-                index_names_.erase(table_index_it);                     // 如果这个table只有这个Index
+                index_names_.erase(table_index_iter);                     // 如果这个table只有这个Index
             } 
             else 
             {
-                table_index_it->second.erase(index_name);
+                table_index_iter->second.erase(index_name);
             }
             indexes_.erase(index_id);
             catalog_meta_->index_meta_pages_.erase(catalog_meta_->index_meta_pages_.find(index_id));
@@ -408,9 +408,9 @@ dberr_t CatalogManager::LoadIndex(const index_id_t index_id, const page_id_t pag
  */
 dberr_t CatalogManager::GetTable(const table_id_t table_id, TableInfo *&table_info)
 {
-    auto table_it = tables_.find(table_id);
-    if (table_it == tables_.end())
+    auto table_iter = tables_.find(table_id);
+    if (table_iter == tables_.end())
         return DB_TABLE_NOT_EXIST;
-    table_info = table_it->second;
+    table_info = table_iter->second;
     return DB_SUCCESS;
 }

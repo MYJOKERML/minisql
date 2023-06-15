@@ -15,7 +15,7 @@ bool BitmapPage<PageSize>::AllocatePage(uint32_t &page_offset)  // 分配内存�
         uint32_t index = 0;
         while (!IsPageFree(index) && index < GetMaxSupportedSize())  // 从零开始，找到下一个位置为0的页
         {
-        index++;
+          index++;
         }
         next_free_page_ = index;  // 更新下一个空闲页的位置
         return true;

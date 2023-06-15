@@ -35,12 +35,12 @@ void LRUReplacer::Pin(frame_id_t frame_id)
  */
 void LRUReplacer::Unpin(frame_id_t frame_id) 
 {
-  if (Map.count(frame_id)) 
-  {//如果在这个缓冲区里面，最近被调用，放在开头
-    return ;
+  if (Map.count(frame_id))  //如果哈希表中有这个frame_id，就不做任何操作
+  {
+    return;
   }
-  DeleteList.emplace_front(frame_id);
-  Map[frame_id] = DeleteList.begin();
+  DeleteList.emplace_front(frame_id); //如果哈希表中没有这个frame_id，就把这个frame_id放到链表的头部
+  Map[frame_id] = DeleteList.begin(); //把这个frame_id放到哈希表中
 }
 
 /**

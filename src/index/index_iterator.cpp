@@ -46,10 +46,14 @@ std::pair<GenericKey *, RowId> IndexIterator::operator*()
 
 IndexIterator &IndexIterator::operator++() 
 {
-    if (item_index  < page->GetSize())
+    if (item_index < page->GetSize() && page->GetNextPageId() == 0)
     {
         item_index++;
-    } 
+    }
+    else if(page->GetNextPageId() !=0 && item_index + 1 < page->GetSize())
+    {
+        item_index++;
+    }
     else 
     {
         page_id_t next_page_id = page->GetNextPageId();

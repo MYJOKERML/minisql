@@ -70,11 +70,12 @@ page_id_t DiskManager::AllocatePage()
 
     BitmapPage<PAGE_SIZE> *bitmap_page = reinterpret_cast<BitmapPage<PAGE_SIZE> *>(Bitmap); //将char*转换为BitmapPage*，方便操作（使用已实现的类BitmapPage）
     uint32_t next_free_page = bitmap_page->GetNextFreePage();
-    page_id = extent_id * BITMAP_SIZE + next_free_page;
+    page_id = extent_id * BITMAP_SIZE + next_free_page;   //计算逻辑页号
 
     bitmap_page->AllocatePage(next_free_page);
     // 修改meta_data
-    if (extent_id >= *(meta_data_uint+1)) ++ *(meta_data_uint+1);
+    if (extent_id >= *(meta_data_uint+1))
+        ++ *(meta_data_uint+1);
     ++ *(meta_data_uint+2+extent_id);
     ++ *(meta_data_uint);
 
@@ -93,7 +94,7 @@ void DiskManager::DeAllocatePage(page_id_t logical_page_id)
     size_t pages_per_extent = 1 + BITMAP_SIZE;
     page_id_t bitmap_physical_id = 1 + (logical_page_id / BITMAP_SIZE) * pages_per_extent;  //计算bitmap_page的物理页号
     ReadPhysicalPage(bitmap_physical_id, bitmap);   //读取bitmap_page
-    BitmapPage<PAGE_SIZE> *bitmap_page = reinterpret_cast<BitmapPage<PAGE_SIZE> *>(bitmap); //将char*转换为BitmapPage*，方便操作（使用已实现的类BitmapPage）
+    auto *bitmap_page = reinterpret_cast<BitmapPage<PAGE_SIZE> *>(bitmap); //将char*转换为BitmapPage*，方便操作（使用已实现的类BitmapPage）
 
     bitmap_page->DeAllocatePage(logical_page_id % BITMAP_SIZE);     //利用已实现的类BitmapPage中的DeAllocatePage()函数释放page
 
@@ -128,7 +129,7 @@ bool DiskManager::IsPageFree(page_id_t logical_page_id)
 /**
  * TODO: Student Implement
  */
-page_id_t DiskManager::MapPageId(page_id_t logical_page_id) 
+page_id_t DiskManager::MapPageId(page_id_t logical_page_id)
 {
     page_id_t extent_num = logical_page_id / BITMAP_SIZE + 1; // 相当于要加上的位图页的个数
     return logical_page_id + 1 + extent_num;    //位图页个数加上逻辑页数加1即为物理页数

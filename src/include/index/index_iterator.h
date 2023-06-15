@@ -27,6 +27,8 @@ class IndexIterator {
   /** Return whether two iterators are not equal. */
   bool operator!=(const IndexIterator &itr) const;
 
+  int GetItemIndex() const { return item_index; }
+
  private:
   page_id_t current_page_id{INVALID_PAGE_ID};
   LeafPage *page{nullptr};

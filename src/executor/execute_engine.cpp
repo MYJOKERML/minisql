@@ -712,7 +712,7 @@ dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteExecfile" << std::endl;
 #endif
-
+    auto start_time = std::chrono::system_clock::now();
     string filename(ast->child_->val_);       // 获取文件名
     fstream exefstream(filename);             // 打开文件
     if(!exefstream.is_open())                 // 打开失败
@@ -771,7 +771,11 @@ dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
         MinisqlParserFinish();
         yy_delete_buffer(bp);
         yylex_destroy();
-  }
+    }
+    auto stop_time = std::chrono::system_clock::now();
+    double duration_time =
+        double((std::chrono::duration_cast<std::chrono::milliseconds>(stop_time - start_time)).count());
+    cout<<"duration time: "<<duration_time<<"ms"<<endl;
 }
 
 /**
