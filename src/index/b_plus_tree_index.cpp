@@ -46,24 +46,33 @@ dberr_t BPlusTreeIndex::ScanKey(const Row &key, vector<RowId> &result, Transacti
     if (container_.GetValue(index_key, result, txn))
       ++iter;
     result.clear();
-    for (; iter != GetEndIterator(); ++iter) {
+    auto iter2 = GetEndIterator();
+    for (; iter != iter2; ++iter) {
       result.emplace_back((*iter).second);
     }
   } else if (compare_operator == ">=") {
-    for (auto iter = GetBeginIterator(index_key); iter != GetEndIterator(); ++iter) {
+    auto iter = GetBeginIterator();
+    auto iter2 = GetEndIterator();
+    for (; iter != iter2; ++iter) {
       result.emplace_back((*iter).second);
     }
   } else if (compare_operator == "<") {
-    for (auto iter = GetBeginIterator(); iter != GetBeginIterator(index_key); ++iter) {
+    auto iter = GetBeginIterator();
+    auto iter2 = GetBeginIterator(index_key);
+    for (; iter != iter2; ++iter) {
       result.emplace_back((*iter).second);
     }
   } else if (compare_operator == "<=") {
-    for (auto iter = GetBeginIterator(); iter != GetBeginIterator(index_key); ++iter) {
+    auto iter = GetBeginIterator();
+    auto iter2 = GetBeginIterator(index_key);
+    for (; iter != iter2; ++iter) {
       result.emplace_back((*iter).second);
     }
     container_.GetValue(index_key, result, txn);
   } else if (compare_operator == "<>") {
-    for (auto iter = GetBeginIterator(); iter != GetEndIterator(); ++iter) {
+    auto iter = GetBeginIterator();
+    auto iter2 = GetEndIterator();
+    for (; iter != iter2; ++iter) {
       result.emplace_back((*iter).second);
     }
     vector<RowId> temp;

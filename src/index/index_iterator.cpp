@@ -19,14 +19,18 @@ IndexIterator::IndexIterator(page_id_t page_id, BufferPoolManager *bpm, int inde
     if (type){
         item_index = 0; //从第一次结点中的第0号元素开始
         page = Page;
+        current_page_id = Page->GetPageId();
         data = std::make_pair(page->KeyAt(item_index), page->ValueAt(item_index));
     }else{
         //end
         item_index = 0;
-        page = nullptr;
-        GenericKey *key = new GenericKey();
-        RowId value;
-        data = std::make_pair(key, value);
+        page = Page;
+        while(item_index  < page->GetSize())
+        {
+            item_index++;
+        }
+        current_page_id = Page->GetPageId();
+        data = std::make_pair(page->KeyAt(item_index), page->ValueAt(item_index));
     }
 }
 
@@ -42,7 +46,7 @@ std::pair<GenericKey *, RowId> IndexIterator::operator*()
 
 IndexIterator &IndexIterator::operator++() 
 {
-    if (item_index + 1 < page->GetSize()) 
+    if (item_index  < page->GetSize())
     {
         item_index++;
     } 

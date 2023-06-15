@@ -36,6 +36,7 @@ bool InsertExecutor::Next([[maybe_unused]] Row *row, RowId *rid) {
         if(!result.empty())
         {
           inserted = false;
+          LOG(WARNING) << "Insert failed, duplicate key";
           break;
         }
     }

@@ -604,9 +604,15 @@ IndexIterator BPlusTree::Begin(const GenericKey *key)
  */
 IndexIterator BPlusTree::End() 
 {
-    GenericKey *key = new GenericKey();
+    auto *key = new GenericKey();
     Page *page = FindLeafPage(key, root_page_id_,true);
     auto leaf_page = reinterpret_cast<BPlusTreeLeafPage*>(page->GetData());
+    while(leaf_page->GetNextPageId() != 0)
+    {
+        Page* tmp_page = buffer_pool_manager_->FetchPage(leaf_page->GetNextPageId());
+        buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);
+        leaf_page = reinterpret_cast<BPlusTreeLeafPage*>(tmp_page->GetData());
+    }
     return IndexIterator(false, &processor_, leaf_page, buffer_pool_manager_);
 }
 

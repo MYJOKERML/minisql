@@ -35,7 +35,6 @@ bool UpdateExecutor::Next([[maybe_unused]] Row *row, RowId *rid)
     bool inserted = table_info_->GetTableHeap()->UpdateTuple(update_row, emit_rid,exec_ctx_->GetTransaction());
     Row keys{};
     Row keys2{};
-    LOG(WARNING) << inserted << endl;
     if (inserted) {
       for(auto &Index_in_Table:table_indexes_){
         old_row.GetKeyFromRow(table_info_->GetSchema(), Index_in_Table->GetIndexKeySchema(),keys);

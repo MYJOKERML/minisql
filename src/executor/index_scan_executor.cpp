@@ -1,6 +1,7 @@
 #include "executor/executors/index_scan_executor.h"
 #include <algorithm>
 #include "planner/expressions/constant_value_expression.h"
+#include "planner/expressions/logic_expression.h"
 
 // Student added function
 pair<string, Field> FindIndexVal(AbstractExpression* node, uint32_t col_idx) {
@@ -77,20 +78,85 @@ void IndexScanExecutor::Init() {
   }
   exec_ctx_->GetCatalog()->GetTable(plan_->GetTableName(), table_);
   it_ = index_results_.begin();
+
 }
 
 bool IndexScanExecutor::Next(Row *row, RowId *rid) {
-  while(it_ != index_results_.end()) {
+  while(it_ != index_results_.end())
+  {
     Row* tuple = new Row(*it_);
     table_->GetTableHeap()->GetTuple(tuple, nullptr);
-    if (plan_->GetPredicate()->Evaluate(tuple).CompareEquals(Field(kTypeInt, 1))) {
-      vector <Field> fields;
-      for (auto column: original_schema_->GetColumns()) {
-        for (auto target: plan_->OutputSchema()->GetColumns()) {
-          if (!target->GetName().compare(column->GetName())) {
-            fields.push_back(*tuple->GetField(column->GetTableInd()));
+    if(plan_->need_filter_)
+    {
+      if(plan_->GetPredicate()->GetType() == ExpressionType::LogicExpression)
+      {
+        auto logic_expression = dynamic_cast<LogicExpression*>(plan_->GetPredicate().get());
+        bool is_ret = true;
+        for(auto &k:logic_expression->GetChildren())
+        {
+          Field f = k->Evaluate(tuple);
+          if(!f.CompareEquals(Field(kTypeInt, 1)))
+          {
+            is_ret = false;
+            break;
           }
         }
+        if(is_ret)
+        {
+          vector<Field> fields;
+          for (auto column : original_schema_->GetColumns())
+          {
+            for (auto target : plan_->OutputSchema()->GetColumns())
+            {
+              if (!target->GetName().compare(column->GetName()))
+              {
+                fields.push_back(*tuple->GetField(column->GetTableInd()));
+              }
+            }
+          }
+          *row = Row(fields);
+          row->SetRowId(*it_);
+          delete tuple;
+          *rid = *it_;
+          ++it_;
+          return true;
+        }
+      }
+      else
+      {
+        if (plan_->GetPredicate()->Evaluate(tuple).CompareEquals(Field(kTypeInt, 1)))
+        {
+          vector<Field> fields;
+          for (auto column : original_schema_->GetColumns())
+          {
+            for (auto target : plan_->OutputSchema()->GetColumns())
+            {
+              if (!target->GetName().compare(column->GetName()))
+              {
+                fields.push_back(*tuple->GetField(column->GetTableInd()));
+              }
+            }
+          }
+          *row = Row(fields);
+          row->SetRowId(*it_);
+          delete tuple;
+          *rid = *it_;
+          ++it_;
+          return true;
+        }
+      }
+      delete tuple;
+      it_++;
+    }
+    else
+    {
+      vector<Field> fields;
+      for (auto column : original_schema_->GetColumns()) {
+            for (auto target : plan_->OutputSchema()->GetColumns()) {
+              if (!target->GetName().compare(column->GetName())) {
+            fields.push_back(*tuple->GetField(column->GetTableInd()));
+              }
+            }
       }
       *row = Row(fields);
       row->SetRowId(*it_);
@@ -99,8 +165,6 @@ bool IndexScanExecutor::Next(Row *row, RowId *rid) {
       ++it_;
       return true;
     }
-    delete tuple;
-    it_++;
   }
   return false;
 }
