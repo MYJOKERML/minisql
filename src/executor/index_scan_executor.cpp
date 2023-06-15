@@ -1,26 +1,3 @@
-//#include "executor/executors/index_scan_executor.h"
-///**
-//* TODO: Student Implement
-//*/
-//IndexScanExecutor::IndexScanExecutor(ExecuteContext *exec_ctx, const IndexScanPlanNode *plan)
-//    : AbstractExecutor(exec_ctx), plan_(plan) {}
-//
-//void IndexScanExecutor::Init()
-//{
-//    auto Predicate_ = plan_->GetPredicate();    //获取谓词
-//    index_info = plan_->indexes_;
-//}
-//
-//bool IndexScanExecutor::Next(Row *row, RowId *rid)
-//{
-//    for(auto &k: index_info)
-//    {
-//      auto index_ = reinterpret_cast<BPlusTreeIndex *>(k->GetIndex());
-//      auto iter_ = index_->GetBeginIterator();
-//      while(iter_)
-//    }
-//}
-
 #include "executor/executors/index_scan_executor.h"
 #include <algorithm>
 #include "planner/expressions/constant_value_expression.h"

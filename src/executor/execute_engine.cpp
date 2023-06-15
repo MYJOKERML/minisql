@@ -570,7 +570,6 @@ dberr_t ExecuteEngine::ExecuteShowIndexes(pSyntaxNode ast, ExecuteContext *conte
             std::cout << index_name << endl;
           }
     }
-
     return DB_SUCCESS;
 }
 
@@ -602,21 +601,6 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
     Schema* target_schema = target_table->GetSchema();
     for(string tmp_colum_name: vec_index_colum_lists)
     {
-        int if_could = 0;
-        vector<string> uni_colum_list = target_table->GetTableMeta()->unique_key_name;
-        for(string name: uni_colum_list)
-        {
-            if(name == tmp_colum_name)    // 如果索引的列名在unique列中，那么可以创建索引
-            {
-                if_could = 1;
-                break;
-            }
-        }
-        if(!if_could)
-        {
-            std::cout << "can not build index on column(s) not unique" << endl;
-            return DB_FAILED;
-        }
         uint32_t tmp_index;
         dberr_t if_getcolum_success = target_schema->GetColumnIndex(tmp_colum_name, tmp_index);
         if(if_getcolum_success != DB_SUCCESS)
@@ -624,6 +608,15 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
     }
     IndexInfo* new_indexinfo;
     dberr_t if_createindex_success = current_CMgr->CreateIndex(table_name, index_name, vec_index_colum_lists, nullptr, new_indexinfo, "");
+    TableIterator table_iter = target_table->GetTableHeap()->Begin(nullptr);
+    Row keys{};
+    while(table_iter != target_table->GetTableHeap()->End())
+    {
+        Row new_row = *table_iter;
+        new_row.GetKeyFromRow(target_table->GetSchema(), new_indexinfo->GetIndexKeySchema(), keys);
+        new_indexinfo->GetIndex()->InsertEntry(keys, new_row.GetRowId(), nullptr);
+        table_iter++;
+    }
     if(if_createindex_success != DB_SUCCESS)
             return if_createindex_success;
     return DB_SUCCESS;
@@ -659,6 +652,10 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
         }
     }
   out:;
+    TableInfo* target_table = nullptr;
+    current_CMgr->GetTable(table_name, target_table);
+    TableIterator table_iter = target_table->GetTableHeap()->Begin(nullptr);
+    Row keys{};
     IndexInfo* tmp_indexinfo;
     dberr_t if_getindex_success = current_CMgr->GetIndex(table_name, index_name, tmp_indexinfo);
     if(if_getindex_success != DB_SUCCESS)
@@ -666,6 +663,15 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
         std::cout << "no index: " << index_name << endl;
         return if_getindex_success;
     }
+
+    while(table_iter != target_table->GetTableHeap()->End())
+    {
+      Row new_row = *table_iter;
+      new_row.GetKeyFromRow(target_table->GetSchema(), tmp_indexinfo->GetIndexKeySchema(), keys);
+      tmp_indexinfo->GetIndex()->RemoveEntry(keys, new_row.GetRowId(), nullptr);
+      table_iter++;
+    }
+
     dberr_t if_create_success = current_CMgr->DropIndex(table_name, index_name);
     if(if_create_success != DB_SUCCESS)
     {

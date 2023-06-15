@@ -42,7 +42,6 @@ bool UpdateExecutor::Next([[maybe_unused]] Row *row, RowId *rid)
         Index_in_Table->GetIndex()->RemoveEntry(keys, emit_rid, exec_ctx_->GetTransaction());
         update_row.GetKeyFromRow(table_info_->GetSchema(), Index_in_Table->GetIndexKeySchema(),keys2);
         Index_in_Table->GetIndex()->InsertEntry(keys2, emit_rid, exec_ctx_->GetTransaction());
-
       }
     }
   }
