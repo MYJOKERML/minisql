@@ -3,7 +3,6 @@
 #include "planner/expressions/constant_value_expression.h"
 #include "planner/expressions/logic_expression.h"
 
-// Student added function
 pair<string, Field> FindIndexVal(AbstractExpression* node, uint32_t col_idx) {
   ComparisonExpression* comparisonNode = nullptr;
   string comparisonType;
@@ -49,7 +48,7 @@ IndexScanExecutor::IndexScanExecutor(ExecuteContext *exec_ctx, const IndexScanPl
 
 void IndexScanExecutor::Init() {
   TableInfo* targetTable;
-  exec_ctx_->GetCatalog()->GetTable(plan_->GetTableName(), targetTable);
+  exec_ctx_->GetCatalog()->GetTable(plan_->GetTableName(), targetTable); //获取表信息
   original_schema_ = targetTable->GetSchema();
   pair<string, Field>* res;
   unordered_map<IndexInfo*, pair<string, Field*>> index_val;
@@ -68,7 +67,7 @@ void IndexScanExecutor::Init() {
     row.emplace_back(*index_val[index].second);
     index->GetIndex()->ScanKey(Row(row), results, nullptr, index_val[index].first);
     sort(results.begin(), results.end(), RowIdComp);
-    if (*plan_->indexes_.begin() != index){
+    if (*plan_->indexes_.begin() != index){ //取交集
       std::set_intersection(results.begin(), results.end(), prevRes.begin(), prevRes.end(),
                             std::back_inserter(index_results_), RowIdComp);
     }
@@ -78,7 +77,6 @@ void IndexScanExecutor::Init() {
   }
   exec_ctx_->GetCatalog()->GetTable(plan_->GetTableName(), table_);
   it_ = index_results_.begin();
-
 }
 
 bool IndexScanExecutor::Next(Row *row, RowId *rid) {

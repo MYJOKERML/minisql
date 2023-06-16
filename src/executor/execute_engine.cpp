@@ -435,7 +435,6 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
           string primary_key_name(primary_keys_node->val_);   // 得到primary key的列的名字
           if_primary_key[primary_key_name] = true;    // 将if_primary_key设置为true
           pri_keys.push_back(primary_key_name);   // 将primary key的列的名字加入vector
- /*<------------------------------此处待修改------------------------------------------------>*/
           uni_keys.push_back(primary_key_name);
           primary_keys_node = primary_keys_node->next_;   // 下一个primary key的节点
         }
@@ -447,7 +446,6 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
         Column *new_column;
         if (type_of_column[column_name_stp] == "int")
         {
-/*<------------------------------此处待修改------------------------------------------------>*/
           if (if_unique[column_name_stp] || if_primary_key[column_name_stp])
           {
             new_column = new Column(column_name_stp, TypeId::kTypeInt, column_index_counter,
@@ -461,7 +459,6 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
         }
         else if (type_of_column[column_name_stp] == "float")
         {
-/*<------------------------------此处待修改------------------------------------------------>*/
           if (if_unique[column_name_stp] || if_primary_key[column_name_stp])
           {
             new_column = new Column(column_name_stp, TypeId::kTypeFloat, column_index_counter,
@@ -475,7 +472,6 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
         }
         else if (type_of_column[column_name_stp] == "char")
         {
-/*<------------------------------此处待修改------------------------------------------------>*/
           if (if_unique[column_name_stp] || if_primary_key[column_name_stp])
           {
             new_column = new Column(column_name_stp, TypeId::kTypeChar, char_size[column_name_stp], column_index_counter,
@@ -511,7 +507,6 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
           string stp_index_name = column_name_stp + "_index";
           vector<string> index_columns_stp = {column_name_stp};
           IndexInfo *stp_index_info;
-/*<------------------------------此处待修改------------------------------------------------>*/
           dberr_t if_create_index_success = current_CMgr->CreateIndex(new_table_name, stp_index_name, index_columns_stp,
                                                                       nullptr, stp_index_info, "");
           if (if_create_index_success != DB_SUCCESS)
