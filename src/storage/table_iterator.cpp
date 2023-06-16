@@ -121,39 +121,6 @@ TableIterator &TableIterator::operator++() {
         table_heap->buffer_pool_manager_->UnpinPage(row->GetRowId().GetPageId(), false);// 释放当前页
     }
     return *this;
-//    BufferPoolManager *buffer_pool_manager = table_heap->buffer_pool_manager_;
-//    auto cur_page = static_cast<TablePage *>(buffer_pool_manager->FetchPage(row->GetRowId().GetPageId()));
-//
-//    cur_page->RLatch();
-//    RowId next_tuple_rid;
-//    if (!cur_page->GetNextTupleRid(row->GetRowId(),
-//                                   &next_tuple_rid)) {  // end of this page
-//        while (cur_page->GetNextPageId() != INVALID_PAGE_ID) {
-//          auto next_page = static_cast<TablePage *>(buffer_pool_manager->FetchPage(cur_page->GetNextPageId()));
-//          cur_page->RUnlatch();
-//          buffer_pool_manager->UnpinPage(cur_page->GetTablePageId(), false);
-//          cur_page = next_page;
-//          cur_page->RLatch();
-//          if (cur_page->GetFirstTupleRid(&next_tuple_rid)) {
-//            break;
-//          }
-//        }
-//    }
-//    row->SetRowId(next_tuple_rid);
-//
-//    if (*this != table_heap->End()) {
-//        // DO NOT ACQUIRE READ LOCK twice in a single thread otherwise it may deadlock.
-//        // See https://users.rust-lang.org/t/how-bad-is-the-potential-deadlock-mentioned-in-rwlocks-document/67234
-//        if (!table_heap->GetTuple(row,nullptr))
-//        {
-//          cur_page->RUnlatch();
-//          buffer_pool_manager->UnpinPage(cur_page->GetTablePageId(), false);
-//        }
-//    }
-//    // release until copy the tuple
-//    cur_page->RUnlatch();
-//    buffer_pool_manager->UnpinPage(cur_page->GetTablePageId(), false);
-//    return *this;
 }
 
 // iter++

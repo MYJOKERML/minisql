@@ -30,7 +30,6 @@ uint32_t Schema::GetSerializedSize() const {
         }
         return Offset;
     }
-    
 }
 
 uint32_t Schema::DeserializeFrom(char *buf, Schema *&schema) {

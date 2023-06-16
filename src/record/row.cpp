@@ -21,12 +21,13 @@ uint32_t Row::SerializeTo(char *buf, Schema *schema) const {
         char bitmap = 0;
         for (uint32_t i = 0; i < 8; i++)  // 每次循环写入一个bitmap中的一个bit
         {
-        if ((map_cnt * 8 + i < fields_.size()) && (fields_.at(map_cnt * 8 + i)->IsNull() == false))  // 如果不为空，写入1
-        {
-            bitmap = bitmap | (0x01 << (7 - i));
-            map[map_cnt * 8 + i] = 1;  // map中对应的位置也写入1
-        } else
-            map[map_cnt * 8 + i] = 0;  // 如果为空，写入0
+          if ((map_cnt * 8 + i < fields_.size()) && (fields_.at(map_cnt * 8 + i)->IsNull() == false))  // 如果不为空，写入1
+          {
+              bitmap = bitmap | (0x01 << (7 - i));
+              map[map_cnt * 8 + i] = 1;  // map中对应的位置也写入1
+          }
+          else
+              map[map_cnt * 8 + i] = 0;  // 如果为空，写入0
         }
         map_cnt++;                         // map_cnt向后推进一位
         MACH_WRITE_TO(char, buf, bitmap);  // 写入bitmap
@@ -37,13 +38,14 @@ uint32_t Row::SerializeTo(char *buf, Schema *schema) const {
     {
         if (map[i])  // 如果不为空
         {
-        uint32_t temp = fields_.at(i)->SerializeTo(buf);  // 写入fields
-        buf += temp;
-        Offset += temp;
+          uint32_t temp = fields_.at(i)->SerializeTo(buf);  // 写入fields
+          buf += temp;
+          Offset += temp;
         }
     }
     return Offset;
 }
+
 uint32_t Row::DeserializeFrom(char *buf, Schema *schema) {
     uint32_t Offset = 0;
     uint32_t field_num = 0;
@@ -60,12 +62,14 @@ uint32_t Row::DeserializeFrom(char *buf, Schema *schema) {
         Offset++;
         for (uint32_t i = 0; i < 8; i++)  // 每次循环读取一个bitmap中的一个bit
         {
-        if (((bitmap >> (7 - i)) & 0x01) != 0)  // 如果不为空，写入1
-        {
-            map[i + map_cnt * 8] = 1;  // map中对应的位置也写入1
-        } else {
-            map[i + map_cnt * 8] = 0;  // 如果为空，写入0
-        }
+          if (((bitmap >> (7 - i)) & 0x01) != 0)  // 如果不为空，写入1
+          {
+              map[i + map_cnt * 8] = 1;  // map中对应的位置也写入1
+          }
+          else
+          {
+              map[i + map_cnt * 8] = 0;  // 如果为空，写入0
+          }
         }
         map_cnt++;  // map_cnt向后推进一位
     }
